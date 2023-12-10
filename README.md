@@ -25,21 +25,18 @@ Set up a Postgres database using a Helm Chart.
 
 1. Set up Bitnami Repo
 ```bash
-helm repo add <REPO_NAME> https://charts.bitnami.com/bitnami
+helm repo add bitnami https://charts.bitnami.com/bitnami
 ```
 
 2. Install PostgreSQL Helm Chart
+```bash
+helm install postgresql bitnami/postgresql1 --set primary.persistence.enabled=false
 ```
-helm install <SERVICE_NAME> <REPO_NAME>/postgresql
-```
-
-This should set up a Postgre deployment at `<SERVICE_NAME>-postgresql.default.svc.cluster.local` in your Kubernetes cluster. You can verify it by running `kubectl svc`
 
 By default, it will create a username `postgres`. The password can be retrieved with the following command:
 ```bash
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace default <SERVICE_NAME>-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
-
-echo $POSTGRES_PASSWORD
+$POSTGRES_PASSWORD  = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($(kubectl get secret --namespace default postgresql1 -o jsonpath="{.data.postgres-password}")))
+$POSTGRES_PASSWORD
 ```
 
 <sup><sub>* The instructions are adapted from [Bitnami's PostgreSQL Helm Chart](https://artifacthub.io/packages/helm/bitnami/postgresql).</sub></sup>
@@ -49,56 +46,38 @@ The database is accessible within the cluster. This means that when you will hav
 
 * Connecting Via Port Forwarding
 ```bash
-kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
-    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432
-```
-
-* Connecting Via a Pod
-```bash
-kubectl exec -it <POD_NAME> bash
-PGPASSWORD="<PASSWORD HERE>" psql postgres://postgres@<SERVICE_NAME>:5432/postgres -c <COMMAND_HERE>
+kubectl port-forward --namespace default svc/postgresql1 5432:5432 
+$env:PGPASSWORD = "$POSTGRES_PASSWORD"
+psql --host 127.0.0.1 -U postgres -d postgres -p 5432
 ```
 
 4. Run Seed Files
 We will need to run the seed files in `db/` in order to create the tables and populate them with data.
 
 ```bash
-kubectl port-forward --namespace default svc/<SERVICE_NAME>-postgresql 5432:5432 &
-    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432 < <FILE_NAME.sql>
+kubectl port-forward --namespace default svc/postgresql1 5432:5432 
+$env:PGPASSWORD = "$POSTGRES_PASSWORD"
+psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -f 1_create_tables.sql
+psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -f 2_seed_users.sql
+psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -f 3_seed_tokens.sql
 ```
 
-### 2. Running the Analytics Application Locally
-In the `analytics/` directory:
+### 2. Deployment Application
+Build and push docker image to `AWS ECR` through `AWS CodeBuild`
+- Application will be deployed to `AWS EKS`
+- Every time there is a commit to `main` branch and file in `analytics` folder was changed, sourcecode will be build and deploy to `eks` </br>
+please refer to [buildspec.yaml](./buildspec.yml)
 
-1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-2. Run the application (see below regarding environment variables)
-```bash
-<ENV_VARS> python app.py
-```
+### 3. CloudWatch Metrics in EKS
+To enable CloudWatch Observability add-on, including CloudWatch Application Signals and Container Insights, and start ingesting telemetry into CloudWatch, please follow these steps:
 
-There are multiple ways to set environment variables in a command. They can be set per session by running `export KEY=VAL` in the command line or they can be prepended into your command.
-
-* `DB_USERNAME`
-* `DB_PASSWORD`
-* `DB_HOST` (defaults to `127.0.0.1`)
-* `DB_PORT` (defaults to `5432`)
-* `DB_NAME` (defaults to `postgres`)
-
-If we set the environment variables by prepending them, it would look like the following:
-```bash
-DB_USERNAME=username_here DB_PASSWORD=password_here python app.py
-```
-The benefit here is that it's explicitly set. However, note that the `DB_PASSWORD` value is now recorded in the session's history in plaintext. There are several ways to work around this including setting environment variables in a file and sourcing them in a terminal session.
-
-3. Verifying The Application
-* Generate report for check-ins grouped by dates
-`curl <BASE_URL>/api/reports/daily_usage`
-
-* Generate report for check-ins grouped by users
-`curl <BASE_URL>/api/reports/user_visits`
+- Sign in to the AWS Management Console and open the Amazon EKS service.
+- Select your EKS cluster from the list.
+- In the cluster details page, navigate to the "Add-ons" tab.
+- Look for the "CloudWatch Observability" add-on in the list of available add-ons.
+- Click on the "Install" button to initiate the installation process.
+- Wait for the installation process to complete. Once successfully installed, the CloudWatch Observability add-on will be enabled for your EKS cluster.
+- By default, CloudWatch Observability will start collecting and sending data from your applications and containers within the EKS cluster to CloudWatch for analysis and monitoring.
 
 ## Project Instructions
 1. Set up a Postgres database with a Helm Chart
