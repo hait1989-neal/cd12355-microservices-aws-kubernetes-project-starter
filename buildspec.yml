@@ -28,6 +28,4 @@ phases:
       - cat deployment.yaml
       - echo Updating EKS deployment...
       - aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --verbose
-      - cat deployment.yaml
-      - kubectl apply -f ./db-configmap.yaml
-      - kubectl apply -f ./db-secret.yaml
+      - kubectl apply -f .
