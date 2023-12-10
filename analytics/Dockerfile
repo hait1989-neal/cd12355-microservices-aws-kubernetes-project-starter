@@ -1,13 +1,13 @@
 FROM public.ecr.aws/docker/library/python:3.10-alpine 
 
-RUN mkdir /app
-WORKDIR /app
-RUN adduser -u 1000 -D app
+USER root
 
-USER app
+WORKDIR /src
 
-COPY . /app
+COPY . /src
+
+# Dependencies are installed during build time in the container itself so we don't have OS mismatch
 RUN pip install -r requirements.txt
 
+# Start  Flask application
 CMD python app.py
-
