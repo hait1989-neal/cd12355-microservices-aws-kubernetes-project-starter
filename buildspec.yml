@@ -28,6 +28,3 @@ phases:
       - cat deployment.yaml
       - echo Updating EKS deployment...
       - aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --verbose
-      - chmod +r *.yaml
-      - ls -l
-      - kubectl apply -f .
