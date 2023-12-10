@@ -4,12 +4,10 @@ USER root
 
 WORKDIR /src
 
-COPY ./analytics/requirements.txt requirements.txt
+COPY . /src
 
 # Dependencies are installed during build time in the container itself so we don't have OS mismatch
 RUN pip install -r requirements.txt
-
-COPY ./analytics .
 
 # Start  Flask application
 CMD python app.py
