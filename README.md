@@ -69,15 +69,11 @@ Build and push docker image to `AWS ECR` through `AWS CodeBuild`
 please refer to [buildspec.yaml](./buildspec.yml)
 
 ### 3. CloudWatch Metrics in EKS
-To enable CloudWatch Observability add-on, including CloudWatch Application Signals and Container Insights, and start ingesting telemetry into CloudWatch, please follow these steps:
+1. Node Role Policy
+   Your policy for your EKS node role should include CloudWatchAgentServerPolicy for the agent to properly forward metrics.
 
-- Sign in to the AWS Management Console and open the Amazon EKS service.
-- Select your EKS cluster from the list.
-- In the cluster details page, navigate to the "Add-ons" tab.
-- Look for the "CloudWatch Observability" add-on in the list of available add-ons.
-- Click on the "Install" button to initiate the installation process.
-- Wait for the installation process to complete. Once successfully installed, the CloudWatch Observability add-on will be enabled for your EKS cluster.
-- By default, CloudWatch Observability will start collecting and sending data from your applications and containers within the EKS cluster to CloudWatch for analysis and monitoring.
+2. Install CloudWatch Agent
+   please refer to [Set up Fluent Bit as a DaemonSet to send logs to CloudWatch Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html)
 
 ## Project Instructions
 1. Set up a Postgres database with a Helm Chart
